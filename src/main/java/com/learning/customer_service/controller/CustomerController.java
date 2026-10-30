@@ -5,10 +5,8 @@ import com.learning.customer_service.model.Customer;
 import com.learning.customer_service.service.CustomerService;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -49,4 +47,35 @@ public class CustomerController {
                         "Customer not found with ID: " + customerId
                 ));
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> updateCustomer(
+            @PathVariable Long id,
+            @RequestBody Customer customer) {
+
+        Customer updated =
+                customerService.updateCustomer(id, customer);
+
+        return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping
+    public ResponseEntity<Customer> createCustomer(
+            @RequestBody Customer customer) {
+
+        Customer created =
+                customerService.createCustomer( customer);
+
+        return ResponseEntity.ok(created);
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomer(
+            @PathVariable Long id) {
+
+        customerService.deleteCustomer(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
 }
