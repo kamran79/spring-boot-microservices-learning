@@ -1,0 +1,23 @@
+# Maven
+target/
+*.log
+
+# IntelliJ IDEA
+.idea/
+*.iml
+.idea_backup/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.env.*
+
+customer-service-day1.zip
