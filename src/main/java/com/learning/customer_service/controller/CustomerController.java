@@ -70,10 +70,16 @@ public class CustomerController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(
-            @PathVariable Long id) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
 
-        customerService.deleteCustomer(id);
+        boolean deleted = customerService.deleteCustomer(id);
+
+        if (!deleted) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Customer not found"
+            );
+        }
 
         return ResponseEntity.noContent().build();
     }

@@ -8,72 +8,59 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.Map;
 
 @Service
 public class CustomerService {
 
-    private final Map<Long, Customer> customers =
-            new ConcurrentHashMap<>();
-
-    private final AtomicLong idGenerator = new AtomicLong(2);
+    private final List<Customer> customers = new ArrayList<>();
+    private final AtomicLong nextId = new AtomicLong(3);
 
     public CustomerService() {
-        customers.put(1L,
-                new Customer(1L, "Ali", "ali@example.com"));
-        customers.put(2L,
-                new Customer(2L, "Sara", "sara@example.com"));
+        customers.add(new Customer(1L, "Ali", "ali@example.com"));
+        customers.add(new Customer(2L, "Sara", "sara@example.com"));
     }
 
-    // GET all customers
-    public List<Customer> getAllCustomers() {
-        return new ArrayList<>(customers.values());
+
+    public synchronized List<Customer> getAllCustomers() {
+        return new ArrayList<>(customers);
     }
 
-    // GET customer by ID
-    public Customer getCustomerById(Long id) {
-        Customer customer = customers.get(id);
-
-        if (customer == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Customer not found: " + id
-            );
-        }
-
-        return customer;
+    public synchronized Customer getCustomerById(Long id) {
+        return customers.stream()
+                .filter(customer -> customer.getId().equals(id))
+                .findFirst()
+                .orElse(null);
     }
 
-    // GET total count
-    public int getCustomersSize() {
+
+    public synchronized int getCustomersSize() {
         return customers.size();
     }
 
-    // POST create customer
-    public Customer createCustomer(Customer customer) {
-
-        Long newId = idGenerator.incrementAndGet();
-
+    public synchronized Customer createCustomer(Customer customer) {
         Customer newCustomer = new Customer(
-                newId,
-                customer.getName(),
-                customer.getEmail()
+                nextId.getAndIncrement(),
+                customer.getName().trim(),
+                customer.getEmail().trim()
         );
 
-        customers.put(newId, newCustomer);
-
+        customers.add(newCustomer);
         return newCustomer;
     }
 
     // PUT update customer
     public Customer updateCustomer(Long id, Customer customer) {
 
-        return customers.computeIfPresent(id, (key, existing) ->
-                new Customer(id, customer.getName(),
-                        customer.getEmail())
-        ) != null ? getCustomerById(id) : throwNotFound(id);
+        return customers.stream()
+                .filter(customerLocal -> customerLocal.getId().equals(id))
+                .findFirst()
+                .map(existingCustomer -> {
+                    existingCustomer.setName(customer.getName());
+                    existingCustomer.setEmail(customer.getEmail());
+                    return existingCustomer;
+                })
+                .orElse(null);
     }
 
     private Customer throwNotFound(Long id) {
@@ -82,17 +69,11 @@ public class CustomerService {
                 "Customer not found: " + id
         );
     }
+    public synchronized boolean deleteCustomer(Long id) {
 
-    // DELETE customer
-    public void deleteCustomer(Long id) {
-
-        Customer removed = customers.remove(id);
-
-        if (removed == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Customer not found: " + id
-            );
-        }
+        customers.removeIf(
+                customerLocal -> customerLocal.getId().equals(id)
+        );
+        return false;
     }
 }
