@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.learning.customer_service.dto.CustomerRequest;
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
@@ -47,7 +50,7 @@ public class CustomerController {
                         "Customer not found with ID: " + customerId
                 ));
     }
-    @PutMapping("/{id}")
+    /*@PutMapping("/{id}")
     public ResponseEntity<Customer> updateCustomer(
             @PathVariable Long id,
             @RequestBody Customer customer) {
@@ -56,9 +59,34 @@ public class CustomerController {
                 customerService.updateCustomer(id, customer);
 
         return ResponseEntity.ok(updated);
+    }*/
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> updateCustomer(
+            @PathVariable Long id,
+            @Valid @RequestBody CustomerRequest request) {
+
+        Customer customer = new Customer(
+                id,
+                request.name(),
+                request.email()
+        );
+
+        Customer updatedCustomer =
+                customerService.updateCustomer(id, customer);
+
+        if (updatedCustomer == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Customer not found with ID: " + id
+            );
+        }
+
+        return ResponseEntity.ok(updatedCustomer);
     }
 
-    @PostMapping
+
+    /*@PostMapping
     public ResponseEntity<Customer> createCustomer(
             @RequestBody Customer customer) {
 
@@ -66,7 +94,27 @@ public class CustomerController {
                 customerService.createCustomer( customer);
 
         return ResponseEntity.ok(created);
+    }*/
+
+
+    @PostMapping
+    public ResponseEntity<Customer> createCustomer(
+            @Valid @RequestBody CustomerRequest request) {
+
+        Customer customer = new Customer(
+                null,
+                request.name(),
+                request.email()
+        );
+
+        Customer createdCustomer =
+                customerService.createCustomer(customer);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(createdCustomer);
     }
+
 
 
     @DeleteMapping("/{id}")

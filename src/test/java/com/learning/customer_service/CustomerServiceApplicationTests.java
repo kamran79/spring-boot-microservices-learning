@@ -86,7 +86,7 @@ class CustomerServiceApplicationTests {
         """;
 
 		mockMvc.perform(
-						MockMvcRequestBuilders.get("/api/customers/99")
+						MockMvcRequestBuilders.put("/api/customers/99")
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(requestBody)
 				)
@@ -99,11 +99,12 @@ class CustomerServiceApplicationTests {
 		// Delete customer ID 2
 		mockMvc.perform(
 						MockMvcRequestBuilders.delete("/api/customers/2")
-				).andExpect(status().isNotFound());
+		).andExpect(status().isNoContent());
 
-		// Verify customer no longer exists
+		// Verify customer was deleted
 		mockMvc.perform(
-						MockMvcRequestBuilders.get("/api/customers/2"))
+						MockMvcRequestBuilders.get("/api/customers/2")
+				)
 				.andExpect(status().isNotFound());
 	}
 
@@ -131,4 +132,87 @@ class CustomerServiceApplicationTests {
 				.andExpect(status().isOk())
 				.andExpect(content().string("2"));
 	}
+
+
+	@Test
+	void testCreateCustomerValidationFailed() throws Exception {
+
+		// Arrange: prepare invalid request data
+		String requestBody = """
+        {
+            "name": "",
+            "email": "wrong-email"
+        }
+        """;
+
+		// Act: send a simulated HTTP POST request
+		mockMvc.perform(
+						MockMvcRequestBuilders.post("/api/customers")
+								.contentType(MediaType.APPLICATION_JSON)
+								.content(requestBody)
+				)
+
+				// Assert: verify the response
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.message")
+						.value("Request validation failed"))
+				.andExpect(jsonPath("$.fieldErrors.name")
+						.value("Customer name is required"))
+				.andExpect(jsonPath("$.fieldErrors.email")
+						.value("Email must be valid"));
+	}
+
+	@Test
+	void testUpdateCustomerNotFoundErrorResponse() throws Exception {
+
+		// Arrange: prepare invalid request data
+		String requestBody = """
+        {
+            "name": "Unknown Customer",
+             "email": "unknown@example.com"
+        }
+        
+        """;
+
+		// Act: send a simulated HTTP get request
+		mockMvc.perform(
+						MockMvcRequestBuilders.get("/api/customers/999")
+								.contentType(MediaType.APPLICATION_JSON)
+								.content(requestBody)
+				)
+
+				// Assert: verify the response
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.message")
+						.value("Customer not found with ID: 999"));
+
+	}
+
+	@Test
+	void testCreateCustomerMalformedJson() throws Exception {
+
+		// Arrange: prepare invalid request data
+		String requestBody = """
+        {
+           "name": "Ahmed", "email":
+        }
+        
+        """;
+
+		// Act: send a simulated HTTP get request
+		mockMvc.perform(
+						MockMvcRequestBuilders.post("/api/customers")
+								.contentType(MediaType.APPLICATION_JSON)
+								.content(requestBody)
+				)
+
+				// Assert: verify the response
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.message")
+						.value("Malformed or missing JSON request body"));
+
+	}
+
 }

@@ -71,9 +71,8 @@ public class CustomerService {
     }
     public synchronized boolean deleteCustomer(Long id) {
 
-        customers.removeIf(
+       return customers.removeIf(
                 customerLocal -> customerLocal.getId().equals(id)
         );
-        return false;
     }
 }
