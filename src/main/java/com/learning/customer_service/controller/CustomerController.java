@@ -13,21 +13,25 @@ import com.learning.customer_service.dto.CustomerRequest;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import com.learning.customer_service.dto.CustomerResponse;
+import com.learning.customer_service.mapper.CustomerMapper;
+import java.util.List;
+
+
 
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
+    private final CustomerMapper customerMapper;
 
     private final CustomerService customerService;
 
-    public CustomerController(CustomerService customerService) {
-        this.customerService = customerService;
-    }
+    public CustomerController(
+            CustomerService customerService,
+            CustomerMapper customerMapper) {
 
-    // Get all customers
-    @GetMapping
-    public List<Customer> getAllCustomers() {
-        return customerService.getAllCustomers();
+        this.customerService = customerService;
+        this.customerMapper = customerMapper;
     }
 
     // Get total customer count
@@ -37,40 +41,42 @@ public class CustomerController {
     }
 
     // Get customer by ID
-    @GetMapping("/{customerId}")
-    public Customer getCustomer(@PathVariable Long customerId) {
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerResponse> getCustomerById(
+            @PathVariable Long id) {
 
-        return customerService.getAllCustomers()
-                .stream()
-                .filter(customer ->
-                        customer.getId().equals(customerId))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Customer not found with ID: " + customerId
-                ));
+        Customer customer = customerService.getCustomerById(id);
+
+        if (customer == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Customer not found with ID: " + id
+            );
+        }
+
+        return ResponseEntity.ok(
+                customerMapper.toResponse(customer)
+        );
     }
-    /*@PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(
-            @PathVariable Long id,
-            @RequestBody Customer customer) {
 
-        Customer updated =
-                customerService.updateCustomer(id, customer);
+    @GetMapping
+    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
 
-        return ResponseEntity.ok(updated);
-    }*/
+        List<CustomerResponse> responses =
+                customerService.getAllCustomers()
+                        .stream()
+                        .map(customerMapper::toResponse)
+                        .toList();
+
+        return ResponseEntity.ok(responses);
+    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(
+    public ResponseEntity<CustomerResponse> updateCustomer(
             @PathVariable Long id,
             @Valid @RequestBody CustomerRequest request) {
 
-        Customer customer = new Customer(
-                id,
-                request.name(),
-                request.email()
-        );
+        Customer customer = customerMapper.toEntity(request);
 
         Customer updatedCustomer =
                 customerService.updateCustomer(id, customer);
@@ -82,39 +88,27 @@ public class CustomerController {
             );
         }
 
-        return ResponseEntity.ok(updatedCustomer);
+        return ResponseEntity.ok(
+                customerMapper.toResponse(updatedCustomer)
+        );
     }
 
-
-    /*@PostMapping
-    public ResponseEntity<Customer> createCustomer(
-            @RequestBody Customer customer) {
-
-        Customer created =
-                customerService.createCustomer( customer);
-
-        return ResponseEntity.ok(created);
-    }*/
-
-
     @PostMapping
-    public ResponseEntity<Customer> createCustomer(
+    public ResponseEntity<CustomerResponse> createCustomer(
             @Valid @RequestBody CustomerRequest request) {
 
-        Customer customer = new Customer(
-                null,
-                request.name(),
-                request.email()
-        );
+        Customer customer = customerMapper.toEntity(request);
 
         Customer createdCustomer =
                 customerService.createCustomer(customer);
 
+        CustomerResponse response =
+                customerMapper.toResponse(createdCustomer);
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(createdCustomer);
+                .body(response);
     }
-
 
 
     @DeleteMapping("/{id}")
