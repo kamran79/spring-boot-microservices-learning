@@ -6,6 +6,7 @@ import com.learning.customer_service.service.CustomerService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,8 +37,8 @@ public class CustomerController {
 
     // Get total customer count
     @GetMapping("/count")
-    public int getCustomerCount() {
-        return customerService.getAllCustomers().size();
+    public long getCustomerCount() {
+        return customerService.getCustomersSize();
     }
 
     // Get customer by ID

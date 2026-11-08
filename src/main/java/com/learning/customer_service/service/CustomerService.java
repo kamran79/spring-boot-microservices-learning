@@ -2,8 +2,10 @@
 package com.learning.customer_service.service;
 
 import com.learning.customer_service.model.Customer;
+import com.learning.customer_service.repository.CustomerRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -13,54 +15,44 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 public class CustomerService {
 
-    private final List<Customer> customers = new ArrayList<>();
-    private final AtomicLong nextId = new AtomicLong(3);
+    private final CustomerRepository customerRepository;
 
-    public CustomerService() {
-        customers.add(new Customer(1L, "Ali", "ali@example.com"));
-        customers.add(new Customer(2L, "Sara", "sara@example.com"));
+    public CustomerService(CustomerRepository customerRepository) {
+        this.customerRepository = customerRepository;
     }
 
-
-    public synchronized List<Customer> getAllCustomers() {
-        return new ArrayList<>(customers);
+    // GET all customers
+    @Transactional(readOnly = true)
+    public List<Customer> getAllCustomers() {
+        return customerRepository.findAll();
+    }
+    // GET customer by ID
+    @Transactional(readOnly = true)
+    public Customer getCustomerById(Long id) {
+        return customerRepository.findById(id).orElse(null);
     }
 
-    public synchronized Customer getCustomerById(Long id) {
-        return customers.stream()
-                .filter(customer -> customer.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+    // Count customers
+    @Transactional(readOnly = true)
+    public long getCustomersSize() {
+        return customerRepository.count();
     }
 
-
-    public synchronized int getCustomersSize() {
-        return customers.size();
-    }
-
-    public synchronized Customer createCustomer(Customer customer) {
-        Customer newCustomer = new Customer(
-                nextId.getAndIncrement(),
-                customer.getName().trim(),
-                customer.getEmail().trim()
-        );
-
-        customers.add(newCustomer);
-        return newCustomer;
+    @Transactional
+    public Customer createCustomer(Customer customer) {
+        return customerRepository.save(customer);
     }
 
     // PUT update customer
+    @Transactional
     public Customer updateCustomer(Long id, Customer customer) {
 
-        return customers.stream()
-                .filter(customerLocal -> customerLocal.getId().equals(id))
-                .findFirst()
-                .map(existingCustomer -> {
+        return customerRepository.findById(id)
+                .map(existingCustomer->{
                     existingCustomer.setName(customer.getName());
                     existingCustomer.setEmail(customer.getEmail());
-                    return existingCustomer;
-                })
-                .orElse(null);
+                    return customerRepository.save(existingCustomer);
+                }).orElse(null);
     }
 
     private Customer throwNotFound(Long id) {
@@ -69,10 +61,14 @@ public class CustomerService {
                 "Customer not found: " + id
         );
     }
-    public synchronized boolean deleteCustomer(Long id) {
+    @Transactional
+    public boolean deleteCustomer(Long id) {
 
-       return customers.removeIf(
-                customerLocal -> customerLocal.getId().equals(id)
-        );
+        if (!customerRepository.existsById(id)) {
+            return false;
+        }
+
+        customerRepository.deleteById(id);
+        return true;
     }
 }

@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/customerdb_test
+    username: customer_app
+    password: "default"
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
