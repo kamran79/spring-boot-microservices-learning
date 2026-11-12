@@ -21,6 +21,9 @@ public class Customer {
     @Column(nullable = false)
     private String email;
 
+    @Column(length = 20)
+    private String phone;
+
     protected Customer() {
         // Required by JPA
     }
@@ -53,5 +56,13 @@ public class Customer {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }

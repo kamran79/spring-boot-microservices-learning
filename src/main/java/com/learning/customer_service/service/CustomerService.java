@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -31,6 +32,17 @@ public class CustomerService {
     public Customer getCustomerById(Long id) {
         return customerRepository.findById(id).orElse(null);
     }
+
+    // GET customer by email
+    @Transactional(readOnly = true)
+    public Customer findByEmail(String email) {
+
+        Optional<Customer> result =
+                customerRepository.findByEmail(email);
+
+        return result.orElse(null);
+    }
+
 
     // Count customers
     @Transactional(readOnly = true)
@@ -70,5 +82,29 @@ public class CustomerService {
 
         customerRepository.deleteById(id);
         return true;
+    }
+
+    @Transactional
+    public void demonstrateRollback(Customer customer) {
+
+        // Step 1: Insert customer
+        customerRepository.saveAndFlush(customer);
+
+        // Step 2: Simulate a business failure
+        throw new IllegalStateException(
+                "Simulated failure - rollback transaction"
+        );
+    }
+    @Transactional
+    public void createCustomerAndFail() {
+        Customer customer = new Customer(
+                null,
+                "Kamran",
+                "kamran@example.com"
+        );
+
+        customerRepository.save(customer);
+
+        throw new RuntimeException("Simulated failure");
     }
 }

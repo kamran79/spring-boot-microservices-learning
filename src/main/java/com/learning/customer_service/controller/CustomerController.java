@@ -60,6 +60,21 @@ public class CustomerController {
         );
     }
 
+    @GetMapping("/email")
+    public ResponseEntity<CustomerResponse> getCustomerByEmail(
+            @RequestParam String email) {
+
+        Customer customer = customerService.findByEmail(email);
+
+        if (customer == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(
+                customerMapper.toResponse(customer)
+        );
+    }
+
     @GetMapping
     public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
 

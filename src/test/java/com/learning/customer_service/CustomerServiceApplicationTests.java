@@ -164,7 +164,7 @@ class CustomerServiceApplicationTests {
 	}
 
 	@Test
-	void testUpdateCustomerNotFoundErrorResponse() throws Exception {
+	void testGetCustomerNotFoundErrorResponse() throws Exception {
 
 		// Arrange: prepare invalid request data
 		String requestBody = """
