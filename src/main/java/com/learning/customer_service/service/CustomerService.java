@@ -3,6 +3,7 @@ package com.learning.customer_service.service;
 
 import com.learning.customer_service.model.Customer;
 import com.learning.customer_service.repository.CustomerRepository;
+import io.micrometer.observation.ObservationFilter;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class CustomerService {
@@ -27,6 +30,7 @@ public class CustomerService {
     public List<Customer> getAllCustomers() {
         return customerRepository.findAll();
     }
+
     // GET customer by ID
     @Transactional(readOnly = true)
     public Customer getCustomerById(Long id) {
@@ -41,6 +45,20 @@ public class CustomerService {
                 customerRepository.findByEmail(email);
 
         return result.orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Customer> getCustomersPage(Pageable pageable) {
+        return customerRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Customer> searchCustomersByName(
+            String name,
+            Pageable pageable) {
+
+        return customerRepository
+                .findByNameContainingIgnoreCase(name, pageable);
     }
 
 
@@ -60,7 +78,7 @@ public class CustomerService {
     public Customer updateCustomer(Long id, Customer customer) {
 
         return customerRepository.findById(id)
-                .map(existingCustomer->{
+                .map(existingCustomer -> {
                     existingCustomer.setName(customer.getName());
                     existingCustomer.setEmail(customer.getEmail());
                     return customerRepository.save(existingCustomer);
@@ -73,6 +91,7 @@ public class CustomerService {
                 "Customer not found: " + id
         );
     }
+
     @Transactional
     public boolean deleteCustomer(Long id) {
 
@@ -95,6 +114,7 @@ public class CustomerService {
                 "Simulated failure - rollback transaction"
         );
     }
+
     @Transactional
     public void createCustomerAndFail() {
         Customer customer = new Customer(
@@ -106,5 +126,14 @@ public class CustomerService {
         customerRepository.save(customer);
 
         throw new RuntimeException("Simulated failure");
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Customer> searchCustomersByEmail(
+            String domain,
+            Pageable pageable) {
+
+        return customerRepository
+                .findByEmailContainingIgnoreCase(domain, pageable);
     }
 }

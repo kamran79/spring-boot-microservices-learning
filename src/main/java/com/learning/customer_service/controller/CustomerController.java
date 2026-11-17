@@ -18,6 +18,12 @@ import com.learning.customer_service.dto.CustomerResponse;
 import com.learning.customer_service.mapper.CustomerMapper;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController
@@ -142,4 +148,67 @@ public class CustomerController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/paged")
+    public Page<CustomerResponse> getCustomersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        Sort.Direction sortDirection =
+                Sort.Direction.fromString(direction);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, sortBy)
+        );
+
+        return customerService.getCustomersPage(pageable)
+                .map(customerMapper::toResponse);
+    }
+
+    @GetMapping("/search")
+    public Page<CustomerResponse> searchCustomers(
+
+            @RequestParam String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        if (page < 0 || size < 1 || size > 100) {
+            throw new IllegalArgumentException(
+                    "Invalid pagination parameters");
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("name").ascending()
+        );
+
+        return customerService.searchCustomersByName(name, pageable)
+                .map(customerMapper::toResponse);
+    }
+    @GetMapping("/search/email")
+    public Page<CustomerResponse> findByEmailEndingWithIgnoreCase(
+
+            @RequestParam String domain,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        if (page < 0 || size < 1 || size > 100) {
+            throw new IllegalArgumentException(
+                    "Invalid pagination parameters");
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("email").ascending()
+        );
+
+        return customerService
+                .searchCustomersByEmail("@" + domain, pageable)
+                .map(customerMapper::toResponse);
+    }
 }
