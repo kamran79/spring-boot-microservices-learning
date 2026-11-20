@@ -8,6 +8,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -15,8 +16,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
+import com.learning.customer_service.model.Customer;
+import com.learning.customer_service.repository.CustomerRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.test.context.support.WithMockUser;
+
 @SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
+@WithMockUser(roles = "ADMIN")
 @DirtiesContext(
 		classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD
 )
@@ -24,6 +32,29 @@ class CustomerServiceApplicationTests {
 
 	@Autowired
 	private MockMvc mockMvc;
+
+	@Autowired
+	private CustomerRepository customerRepository;
+
+	private Long aliId;
+	private Long saraId;
+
+	@BeforeEach
+	void setUp() {
+
+		customerRepository.deleteAll();
+
+		Customer ali = customerRepository.save(
+				new Customer(null, "Ali", "ali@example.com")
+		);
+
+		Customer sara = customerRepository.save(
+				new Customer(null, "Sara", "sara@example.com")
+		);
+
+		aliId = ali.getId();
+		saraId = sara.getId();
+	}
 
 	@Test
 	void contextLoads() {
@@ -41,9 +72,9 @@ class CustomerServiceApplicationTests {
 	@Test
 	void testGetCustomerById() throws Exception {
 		mockMvc.perform(
-						MockMvcRequestBuilders.get("/api/customers/2"))
+				MockMvcRequestBuilders.get("/api/customers/" + saraId))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(2))
+				.andExpect(jsonPath("$.id").value(saraId))
 				.andExpect(jsonPath("$.name").value("Sara"))
 				.andExpect(jsonPath("$.email")
 						.value("sara@example.com"));
@@ -59,18 +90,19 @@ class CustomerServiceApplicationTests {
         """;
 
 		mockMvc.perform(
-				MockMvcRequestBuilders.put("/api/customers/1")
+				MockMvcRequestBuilders.put("/api/customers/"+aliId)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(requestBody)
 		).andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(1))
+				.andExpect(jsonPath("$.id").value(aliId))
 				.andExpect(jsonPath("$.name").value("Ali Updated"))
 				.andExpect(jsonPath("$.email")
 						.value("ali.updated@example.com"));
 
 		// Verify updated data using GET
 		mockMvc.perform(
-						MockMvcRequestBuilders.get("/api/customers/1"))
+						MockMvcRequestBuilders.get("/api/customers/" + aliId))
+
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.name").value("Ali Updated"));
 	}
@@ -98,12 +130,12 @@ class CustomerServiceApplicationTests {
 
 		// Delete customer ID 2
 		mockMvc.perform(
-						MockMvcRequestBuilders.delete("/api/customers/2")
+						MockMvcRequestBuilders.delete("/api/customers/"+saraId)
 		).andExpect(status().isNoContent());
 
 		// Verify customer was deleted
 		mockMvc.perform(
-						MockMvcRequestBuilders.get("/api/customers/2")
+						MockMvcRequestBuilders.get("/api/customers/"+saraId)
 				)
 				.andExpect(status().isNotFound());
 	}
