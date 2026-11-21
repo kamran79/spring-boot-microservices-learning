@@ -23,8 +23,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureMockMvc
-@WithMockUser(roles = "ADMIN")
+@AutoConfigureMockMvc(addFilters = false)
 @DirtiesContext(
 		classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD
 )
