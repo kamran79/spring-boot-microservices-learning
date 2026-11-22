@@ -24,7 +24,7 @@ public class Customer {
     @Column(length = 20)
     private String phone;
 
-    protected Customer() {
+    public Customer() {
         // Required by JPA
     }
 
